@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding=utf-8
 import re
 import polyline
 import urllib
@@ -47,7 +49,7 @@ def get_elevation_data(lat_lon_coords, **elvtn_args):
         })
         """Change out all characters to be encoded with %s"""
 
-	#Is there any way to request less data?
+        #Is there any way to request less data?
         #Polyline encode is lossless, change 5 to lower number?
         url = ELEVATION_BASE_URL + polyline.encode(chunk, 5) + '&key=' + key
         #count += 1

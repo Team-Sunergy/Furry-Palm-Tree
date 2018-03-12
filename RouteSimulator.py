@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding=utf-8
 """
 RouteSimulator.py
 """
@@ -6,8 +8,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class RouteSimulator:
     pass
+
 
 def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
     # Power in = power out
@@ -35,13 +39,14 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
         if i != 0:
             # energy_req = (((W*Crr1)+((N*Crr2)*v)+((((.5*P)*Cd)*A)*(v**2)))*dist)+(W*elv)+(((Na*W)*(v**2))/(2*g))
             if dist != 0.0:
-                energy_req = (((((W*Crr1)+((N*Crr2)*v)+((((.5*P)*Cd)*A)*(v**2)))*dist)+(W*elv))/dist)
+                energy_req = (((((W * Crr1) + ((N * Crr2) * v) + ((((.5 * P) * Cd) * A) * (v ** 2))) * dist) + (
+                        W * elv)) / dist)
             else:
                 energy_req = 0.0
             # Convert Energy in Watt-Seconds (Joules) to KiloWatt-Hours:
             # energy_req = energy_req / 3600000
             # Convert Energy in Watt-Seconds to Watt-Hours:
-            energy_req = energy_req / 3600
+            energy_req /= 3600
             power_out.append(energy_req)
     # The total watt hours (sum(power_out[1:])) divided by 1000 is kilowatt hours.
     df_route['Power_out'] = power_out
@@ -49,10 +54,10 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
     vin_dist = df_route['Vincenty_dist'].data[1:]
     accumulated_vincenty_dist = [0.0]
     for i, dist in enumerate(vin_dist):
-        accumulated_vincenty_dist.append(accumulated_vincenty_dist[i]+dist)
+        accumulated_vincenty_dist.append(accumulated_vincenty_dist[i] + dist)
     accumulated_power_out = [0.0]
     for i, output in enumerate(power_out[1:]):
-        accumulated_power_out.append(accumulated_power_out[i]+output)
+        accumulated_power_out.append(accumulated_power_out[i] + output)
     '''
     plt.axis([min(accumulated_vincenty_dist),
               max(accumulated_vincenty_dist),
@@ -81,8 +86,8 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
     ax2.set_ylabel('Power (kW)', color='g')
     ax2.tick_params('y', colors='g')
     plt.title('Elevation Profile & Net Power')
-    #plt.show()
-    #plt.close()
+    # plt.show()
+    # plt.close()
 
     # Plot Accumulated total energy vs accumulated distance.
     fig, ax1 = plt.subplots()
@@ -100,13 +105,14 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
     plt.close()
     # TODO: Rewrite equation for power instead of energy.
 
+
 if __name__ == '__main__':
     route = Path('df_route.pkl')
-    if route.is_file():
-        df_route = pd.read_pickle(str(route))
-    else:
+    if not route.is_file():
         print("Error: Route dataframe must be constructed prior to execution.")
         exit(-1)
+    df_route = pd.read_pickle(str(route))
+
     ''' Get user input '''
     print("Route Simulator v1.0. Please input the required parameters...")
     '''
@@ -164,9 +170,4 @@ if __name__ == '__main__':
     Na = 1
     g = 9.8
     v = 16
-    main(df_route=df_route,n=n,nb=nb,E=E,W=W,Crr1=Crr1,Crr2=Crr2,N=N,P=P,Cd=Cd,A=A,Na=Na,g=g,v=v)
-
-
-
-
-
+    main(df_route=df_route, n=n, nb=nb, E=E, W=W, Crr1=Crr1, Crr2=Crr2, N=N, P=P, Cd=Cd, A=A, Na=Na, g=g, v=v)

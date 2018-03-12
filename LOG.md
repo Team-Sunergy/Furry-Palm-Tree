@@ -26,4 +26,6 @@ Made program slightly easier to debug:
 ### Sun. 3/11/2018
 - Fixed extra empty windows appearing when running RouteSimulator
 - All three windows now open at once
+- import optimization
+- code cleanup
 

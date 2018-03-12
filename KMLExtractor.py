@@ -1,17 +1,18 @@
+# coding=utf-8
 """
 KMLExtractor.py
 """
 # from fastkml import kml
 import polyline
 import re
-import googlemaps
-from datetime import datetime
+# import googlemaps
+# from datetime import datetime
 import numpy as np
-from urllib import parse
+# from urllib import parse
 from urllib import request
 import simplejson
 from geopy.distance import vincenty
-import pickle
+# import pickle
 import pandas as pd
 from pathlib import Path
 
@@ -35,13 +36,13 @@ def chunks(l, n):
 
 def get_elevation_data(lat_lon_coords, **elvtn_args):
     df_route = pd.DataFrame(columns=['Lat','Lon','Elv'])
-    gmaps = googlemaps.Client(key='AIzaSyCeoTnfT0MwM8M2sU9amxCZUBxr1Fn_RSQ')
+    # gmaps = googlemaps.Client(key='AIzaSyCeoTnfT0MwM8M2sU9amxCZUBxr1Fn_RSQ')
     client_key = 'AIzaSyCeoTnfT0MwM8M2sU9amxCZUBxr1Fn_RSQ'
     ''' Break path into 512 points per segment '''
     # API Limit = 512 locations per request
     path_segments = []
     elevation_results = []
-    polyline_encoded_segments = []
+    # polyline_encoded_segments = []
     for chunk in chunks(lat_lon_coords, 512):
         path_segments.append(chunk)
         path_string = ''
@@ -120,7 +121,8 @@ def get_elevation_difference(df_route):
 def main(lat_lon_coords):
     route = Path('df_route.pkl')
     if route.is_file():
-        df_route = pd.read_pickle(str(route))
+        print()
+        #df_route = pd.read_pickle(str(route))
     else:
         df_route = get_elevation_data(lat_lon_coords)
         # Compute a list of the pairwise vincenty distance between each coordinate pair:
