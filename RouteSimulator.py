@@ -59,6 +59,7 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
               min(df_route['Elv'].data[1:]),
               max(df_route['Elv'].data[1:])])
     '''
+    # plt.summer()
     plt.title('Elevation Profile')
     plt.xlabel('Total Vincenty Distance (meters)')
     plt.ylabel('Elevation (meters)')
@@ -66,8 +67,8 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
     plt.plot(accumulated_vincenty_dist, df_route['Elv'].data)
     plt.plot(accumulated_vincenty_dist, df_route['Power_out'])
     # plt.plot(accumulated_vincenty_dist, df_route['Energy_out'].data, 'r')
-    plt.show()
-    plt.clf()
+    # plt.show()
+    # plt.close()
 
     fig, ax1 = plt.subplots()
     ax1.plot(accumulated_vincenty_dist, df_route['Elv'])
@@ -80,10 +81,10 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
     ax2.set_ylabel('Power (kW)', color='g')
     ax2.tick_params('y', colors='g')
     plt.title('Elevation Profile & Net Power')
-    plt.show()
+    #plt.show()
+    #plt.close()
 
     # Plot Accumulated total energy vs accumulated distance.
-    plt.clf()
     fig, ax1 = plt.subplots()
     ax1.plot(accumulated_vincenty_dist, df_route['Elv'])
     ax1.set_xlabel('Vincenty Distance (meters)')
@@ -96,6 +97,7 @@ def main(df_route, n, nb, E, W, Crr1, Crr2, N, P, Cd, A, Na, g, v):
     ax2.tick_params('y', colors='g')
     plt.title('Elevation Profile & Total Energy Consumption')
     plt.show()
+    plt.close()
     # TODO: Rewrite equation for power instead of energy.
 
 if __name__ == '__main__':
