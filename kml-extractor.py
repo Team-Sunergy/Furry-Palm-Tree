@@ -12,7 +12,7 @@ from urllib import request
 ELEVATION_BASE_URL = 'https://maps.google.com/maps/api/elevation/json?locations=enc:'
 
 #FILENAME = "ASC 2016.kml"
-FILENAME = "ASC 2016(2).kml"
+FILENAME = "ASC2018.gpx"
 
 
 #this is not called anywere else in the code

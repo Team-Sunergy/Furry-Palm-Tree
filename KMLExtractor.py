@@ -15,11 +15,20 @@ from geopy.distance import vincenty
 # import pickle
 import pandas as pd
 from pathlib import Path
+import gpxpy.gpx
+
+# https://developers.google.com/maps/documentation/roads/intro
+# ^ use google maps road api to take datapoints and create road segements
 
 __author__ = 'Chris Campell'
 __version__ = "9/29/2017"
 
 ELEVATION_BASE_URL = 'https://maps.googleapis.com/maps/api/elevation/json'
+ROAD_SNAP_URL = "https://roads.googleapis.com/v1/snapToRoads"
+
+# CLIENT_KEY = 'AIzaSyCeoTnfT0MwM8M2sU9amxCZUBxr1Fn_RSQ'
+CLIENT_KEY = "AIzaSyAu0C8UJbU3PaFTNCgBPY76s6Rm58FPR6w"
+
 
 
 def chunks(l, n):
@@ -34,10 +43,46 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
+def get_location_snapped(input_coordinates):
+    """sends coordinates to google maps api which shifts coordinates onto road and gives them back
+    :param input_coordinates: list of tuples containing latitude longitude coordinates.
+    """
+    # API Limit = 100 locations per request
+    result = []
+    count = 0
+    path_string = ""
+    for latitude, longitude in input_coordinates:
+        path_string = path_string + str(latitude) + ',' + str(longitude) + '|'
+        count += 1
+        if count == 100:
+            count = 0
+            # Remove the pipe character from the last coordinate:
+            path_string = path_string[0:-1]
+            temp = get_location_helper(path_string)
+            path_string = ""
+            for m in temp:  # replace with list comprehension
+                result.append(m)
+                # print(m)
+    return result
+
+
+def get_location_helper(path_string):
+    """Helper for get_location_snapped"""
+
+    # add interpolate=true for more data points during turns and curves in road
+    url = ROAD_SNAP_URL + '?path=' + path_string + '&key=' + CLIENT_KEY
+    response = simplejson.load(request.urlopen(url=url))
+
+    snapped_result = []
+    for resultset in response['snappedPoints']:
+        snapped_result.append((resultset["location"]['latitude'], resultset["location"]['longitude']))
+    return snapped_result
+
+
 def get_elevation_data(lat_lon_coords, **elvtn_args):
-    df_route = pd.DataFrame(columns=['Lat','Lon','Elv'])
+    df_route = pd.DataFrame(columns=['Lat', 'Lon', 'Elv'])
     # gmaps = googlemaps.Client(key='AIzaSyCeoTnfT0MwM8M2sU9amxCZUBxr1Fn_RSQ')
-    client_key = 'AIzaSyCeoTnfT0MwM8M2sU9amxCZUBxr1Fn_RSQ'
+    #client_key = 'AIzaSyCeoTnfT0MwM8M2sU9amxCZUBxr1Fn_RSQ'
     ''' Break path into 512 points per segment '''
     # API Limit = 512 locations per request
     path_segments = []
@@ -56,7 +101,7 @@ def get_elevation_data(lat_lon_coords, **elvtn_args):
             'samples': str(1)
         })
         # Build the request url:
-        url = ELEVATION_BASE_URL + '?locations=enc:' + polyline.encode(chunk, 5) + '&key=' + client_key
+        url = ELEVATION_BASE_URL + '?locations=enc:' + polyline.encode(chunk, 5) + '&key=' + CLIENT_KEY
         response = simplejson.load(request.urlopen(url=url))
         elevation_result = []
         for resultset in response['results']:
@@ -84,15 +129,16 @@ def vincenty_df_series(series):
 
 def get_vincenty_distance(df_route):
     # https://stackoverflow.com/questions/23151246/iterrows-pandas-get-next-rows-value
-    lat_lon_df = df_route[['Lat','Lon']].join(df_route[['Lat','Lon']].shift(), how='left', lsuffix='_left', rsuffix='_right')
+    lat_lon_df = df_route[['Lat', 'Lon']].join(df_route[['Lat', 'Lon']].shift(), how='left', lsuffix='_left',
+                                               rsuffix='_right')
     # Zip the original columns into a tuple (lat, lon)
     lat_lon_df['LatLon_Left'] = list(zip(lat_lon_df.Lat_left, lat_lon_df.Lon_left))
-    del(lat_lon_df['Lat_left'])
-    del(lat_lon_df['Lon_left'])
+    del (lat_lon_df['Lat_left'])
+    del (lat_lon_df['Lon_left'])
     # Zip the offset columns into a tuple (lat, lon)
     lat_lon_df['LatLon_Right'] = list(zip(lat_lon_df.Lat_right, lat_lon_df.Lon_right))
-    del(lat_lon_df['Lat_right'])
-    del(lat_lon_df['Lon_right'])
+    del (lat_lon_df['Lat_right'])
+    del (lat_lon_df['Lon_right'])
     # remove the first row:
     lat_lon_df = lat_lon_df.iloc[1:]
     # Apply vincenty(LatLon_Right, LatLon_Left).meters to each row:
@@ -118,12 +164,11 @@ def get_elevation_difference(df_route):
     # Return the list of elevation differences:
     return delta_elevation
 
+
 def main(lat_lon_coords):
     route = Path('df_route.pkl')
-    if route.is_file():
-        print()
-        #df_route = pd.read_pickle(str(route))
-    else:
+    if not route.is_file():
+        lat_lon_coords = get_location_snapped(lat_lon_coords)
         df_route = get_elevation_data(lat_lon_coords)
         # Compute a list of the pairwise vincenty distance between each coordinate pair:
         vincenty_dist = get_vincenty_distance(df_route=df_route)
@@ -141,22 +186,31 @@ def main(lat_lon_coords):
         df_route.to_pickle('df_route.pkl')
     # Compute the gradient between each coordinate pair:
     # gradient = get_gradient(df_route=df_route)
-    
+
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Open KML and extract Lat-lon coords:
-    with open('ASC2016.kml', 'r') as fp:
-        doc = fp.read()
-    split_doc = doc.split('\n')
-    no_spaces = [i.replace(' ', '') for i in split_doc]
-    regex = re.compile('^(\-?\d+(\.\d+)?),(\-?\d+(\.\d+)?)', re.MULTILINE)
-    lat_lon_coords = []
-    for line in no_spaces:
-        if regex.match(line):
-            lon = line.split(',')[0]
-            lat = line.split(',')[1]
-            lat_lon_coords.append((float(lat), float(lon)))
-    main(lat_lon_coords)
+    if False:
+        with open("ASC2016.kml", "r") as fp:
+            doc = fp.read()
+        split_doc = doc.split('\n')
+        no_spaces = [i.replace(" ", "") for i in split_doc]
+        regex = re.compile("^(-?\d+(\.\d+)?),(-?\d+(\.\d+)?)", re.MULTILINE)
+        lat_lon_coords = []
+        for line in no_spaces:
+            if regex.match(line):
+                lon = line.split(',')[0]
+                lat = line.split(',')[1]
+                lat_lon_coords.append((float(lat), float(lon)))
+    else:
+        gpx_file = open("ASC2018.gpx", "r")
+        gpx = gpxpy.parse(gpx_file)
+        lat_lon_coords = []
+        for track in gpx.tracks:
+            for segment in track.segments:
+                for point in segment.points:
+                    lat_lon_coords.append((float(point.latitude), float(point.longitude)))
 
+    main(lat_lon_coords)
